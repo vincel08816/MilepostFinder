@@ -1,7 +1,29 @@
-/* Typography — one stack for app UI and map chrome */
-body {
+/* Viewport shell — no page scroll; sticky footer */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   font-family: var(--bs-font-sans-serif);
   font-size: var(--bs-body-font-size);
+}
+
+.app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-footer {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
 .leaflet-container,
@@ -47,11 +69,23 @@ body {
 }
 
 .results-panel {
-  max-height: 45vh;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 42%;
+  overflow: hidden;
+}
+
+.results-panel__actions {
+  flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
+  .app-main {
+    flex-direction: row;
+  }
+
   .results-panel {
+    flex: 0 0 auto;
     width: 100%;
     max-width: 320px;
     max-height: none;
