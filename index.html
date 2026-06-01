@@ -13,19 +13,44 @@
     <title>Milepost Direction Finder</title>
     <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-    <link rel="stylesheet" href="/src/style.css" />
   </head>
-  <body>
-    <header class="app-header">
-      <h1>Milepost Direction Finder</h1>
-      <p id="status" class="status">Requesting your location…</p>
+  <body class="d-flex flex-column vh-100">
+    <header class="border-bottom bg-light px-3 py-2 flex-shrink-0">
+      <h1 class="h5 mb-0">Milepost Direction Finder</h1>
     </header>
-    <main>
-      <div id="map" class="map" role="application" aria-label="Thruway map"></div>
-      <aside id="results" class="results" aria-live="polite"></aside>
+    <main class="flex-grow-1 d-flex flex-column flex-md-row min-vh-0 overflow-hidden">
+      <div class="map-shell flex-grow-1 min-h-0">
+        <div
+          id="map"
+          class="map-panel h-100"
+          role="application"
+          aria-label="Thruway map"
+        ></div>
+        <div
+          id="map-snackbar"
+          class="map-snackbar alert shadow mb-0 d-none"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          hidden
+        >
+          <span id="map-snackbar-text" class="map-snackbar__text"></span>
+          <button
+            type="button"
+            class="btn-close flex-shrink-0"
+            aria-label="Dismiss"
+            data-map-snackbar-dismiss
+          ></button>
+        </div>
+      </div>
+      <aside
+        id="results"
+        class="flex-shrink-0 border-top border-md-start bg-white p-3 overflow-auto results-panel"
+        aria-live="polite"
+      ></aside>
     </main>
-    <footer class="app-footer">
-      <button type="button" class="help-btn">
+    <footer class="border-top bg-white px-3 py-2 flex-shrink-0">
+      <button type="button" class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
         </svg>

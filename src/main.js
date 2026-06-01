@@ -1,4 +1,6 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
 import 'leaflet/dist/leaflet.css';
+import './style.css';
 import distance from '@turf/distance';
 import { point } from '@turf/helpers';
 import { fromLeafletLatLng } from './geo/coordinates.js';
@@ -14,11 +16,37 @@ import {
   addMapLegend,
   addZoomToHomeControl,
   showLocationResults,
+  zoomToUserLocation,
 } from './map.js';
-import { renderResults, setStatus, showError } from './ui.js';
+import { applyMobileDocumentFlag } from './browser.js';
+import {
+  describeAccuracy,
+  formatSnackbarMessage,
+  formatLocationCoords,
+  hideMapSnackbar,
+  renderResults,
+  setLocation,
+  showMapError,
+  showMapSnackbar,
+} from './ui.js';
 
-const statusEl = document.getElementById('status');
+applyMobileDocumentFlag();
+
 const resultsEl = document.getElementById('results');
+
+document.querySelector('[data-map-snackbar-dismiss]')?.addEventListener('click', () => {
+  hideMapSnackbar();
+});
+
+/** @param {boolean} gpsPrecise @param {GeolocationCoordinates} coords */
+function showGpsSnackbar(gpsPrecise, coords) {
+  const variant = gpsPrecise ? 'success' : 'warning';
+  showMapSnackbar(
+    variant,
+    formatSnackbarMessage(variant, describeAccuracy(coords)),
+    gpsPrecise ? 4000 : 0,
+  );
+}
 
 const GEO_OPTIONS = {
   enableHighAccuracy: true,
@@ -50,27 +78,6 @@ function maxAccuracyM(relaxed) {
 function isAcceptableAccuracy(coords, relaxed) {
   const limit = maxAccuracyM(relaxed);
   return coords.accuracy != null && coords.accuracy <= limit;
-}
-
-function formatLocationStatus(coords, tracking, relaxed) {
-  const lat = coords.latitude.toFixed(5);
-  const lng = coords.longitude.toFixed(5);
-  const accM =
-    coords.accuracy != null ? Math.round(coords.accuracy) : null;
-  const precision =
-    accM != null ? ` ±${accM} m` : ' (accuracy unknown)';
-  const limit = maxAccuracyM(relaxed);
-
-  if (!isAcceptableAccuracy(coords, relaxed)) {
-    const need =
-      accM != null ? ` — need ≤${limit} m` : ` — need ≤${limit} m fix`;
-    return tracking
-      ? `Low GPS precision · ${lat}, ${lng}${precision}${need}`
-      : `Waiting for GPS · ${lat}, ${lng}${precision}${need}`;
-  }
-
-  const prefix = tracking ? 'Tracking ·' : 'Location ·';
-  return `${prefix} ${lat}, ${lng}${precision}`;
 }
 
 /** @param {GeolocationCoordinates} coords @param {[number, number] | null} lastLngLat */
@@ -149,9 +156,9 @@ async function main() {
   const hasTiles = await detectSelfHostedTiles();
   const { map, baseLayers } = createMap('map', { hasTiles });
 
-  setStatus(
-    statusEl,
-    hasTiles ? 'Loading Thruway data…' : 'Loading Thruway map data…',
+  showMapSnackbar(
+    'warning',
+    formatSnackbarMessage('warning', hasTiles ? 'Loading Thruway data.' : 'Loading map data.'),
   );
 
   let mileposts;
@@ -181,8 +188,7 @@ async function main() {
       loadGeoJSON('./data/park-and-ride.geojson', false),
     ]);
   } catch (err) {
-    setStatus(statusEl, 'Data not loaded');
-    showError(resultsEl, err.message);
+    showMapError(err.message || 'Thruway data could not be loaded.', 0);
     return;
   }
 
@@ -207,7 +213,9 @@ async function main() {
 
   let resultLayers = null;
   let nearbyLayer = null;
-  let hasFirstFix = false;
+  let hasZoomedToUser = false;
+  let hasLocationResults = false;
+  let hasPreciseGps = false;
   /** @type {[number, number] | null} */
   let lastAppliedLngLat = null;
   let stopAcquisitionPolling = () => {};
@@ -216,16 +224,19 @@ async function main() {
 
   function maybeRelaxAccuracyThreshold() {
     if (
-      hasFirstFix ||
+      hasLocationResults ||
       useRelaxedAccuracy ||
       Date.now() - acquisitionStartedAt < ACCURACY_FALLBACK_MS
     ) {
       return;
     }
     useRelaxedAccuracy = true;
-    setStatus(
-      statusEl,
-      `Still acquiring GPS — accepting fixes up to ${RELAXED_ACCURACY_M} m`,
+    showMapSnackbar(
+      'warning',
+      formatSnackbarMessage(
+        'warning',
+        `Accepting fixes up to ${RELAXED_ACCURACY_M} meters while waiting for a better signal.`,
+      ),
     );
   }
 
@@ -241,24 +252,21 @@ async function main() {
   }
 
   function applyLocation(coords) {
+    setLocation(coords);
     maybeRelaxAccuracyThreshold();
 
-    if (!isAcceptableAccuracy(coords, useRelaxedAccuracy)) {
-      setStatus(statusEl, formatLocationStatus(coords, hasFirstFix, useRelaxedAccuracy));
-      return;
-    }
-
-    const isFirstFix = !hasFirstFix;
-
-    if (!isFirstFix && !movedEnoughMeters(coords, lastAppliedLngLat)) {
-      setStatus(statusEl, formatLocationStatus(coords, true, useRelaxedAccuracy));
-      return;
-    }
-
-    hasFirstFix = true;
-    lastAppliedLngLat = [coords.longitude, coords.latitude];
-
     const userLatLng = { lat: coords.latitude, lng: coords.longitude };
+    const gpsPrecise = isAcceptableAccuracy(coords, useRelaxedAccuracy);
+    const isFirstResult = !hasLocationResults;
+
+    if (!isFirstResult && !movedEnoughMeters(coords, lastAppliedLngLat)) {
+      showGpsSnackbar(gpsPrecise, coords);
+      return;
+    }
+
+    lastAppliedLngLat = [coords.longitude, coords.latitude];
+    hasLocationResults = true;
+
     const userLngLat = fromLeafletLatLng(userLatLng);
 
     const nearest = nearestMileposts(userLngLat, mileposts.features, 2);
@@ -272,35 +280,51 @@ async function main() {
       milepostsWithinRadius(userLngLat, mileposts.features, 15),
     );
 
+    const shouldFitMap = isFirstResult || !hasZoomedToUser;
+    if (shouldFitMap && !gpsPrecise) {
+      zoomToUserLocation(map, userLatLng, coords.accuracy);
+      hasZoomedToUser = true;
+    }
+
     resultLayers = showLocationResults(map, {
       userLatLng,
       accuracyM: coords.accuracy,
       nearest,
       roadResult,
       labelFn: milepostLabel,
-      fitBounds: isFirstFix,
-      panToUser: !isFirstFix,
+      fitBounds: shouldFitMap && gpsPrecise,
+      panToUser: !shouldFitMap,
     });
+    if (shouldFitMap && gpsPrecise) {
+      hasZoomedToUser = true;
+    }
     homeBounds = resultLayers.homeBounds;
     homeControl.setEnabled(true);
 
     renderResults(resultsEl, {
+      locationCoords: formatLocationCoords(coords),
       nearest,
       direction: roadResult.direction,
       offThruway,
+      impreciseGps: !gpsPrecise,
       roadName: roadResult.roadName,
       milepostLabel,
       milepostRoadSegment,
     });
 
-    setStatus(statusEl, formatLocationStatus(coords, !isFirstFix, useRelaxedAccuracy));
+    showGpsSnackbar(gpsPrecise, coords);
 
-    if (isFirstFix) {
+    if (gpsPrecise && !hasPreciseGps) {
+      hasPreciseGps = true;
       stopAcquisitionPolling();
     }
   }
 
-  setStatus(statusEl, `Getting your location (≤${STRICT_ACCURACY_M} m precision)…`);
+  hideMapSnackbar();
+  showMapSnackbar(
+    'warning',
+    formatSnackbarMessage('warning', 'Waiting for your location.'),
+  );
 
   stopAcquisitionPolling = startAcquisitionPolling((coords) =>
     applyLocation(coords),
@@ -309,11 +333,10 @@ async function main() {
   const stopWatching = watchPosition(
     (coords) => applyLocation(coords),
     (err) => {
-      if (!hasFirstFix) {
-        setStatus(statusEl, 'Location unavailable');
-        showError(resultsEl, err.message);
+      if (!hasLocationResults) {
+        showMapError(err.message || 'Your location is unavailable.');
       } else {
-        setStatus(statusEl, `GPS error: ${err.message}`);
+        showMapError(err.message || 'GPS error.');
       }
     },
   );
@@ -326,6 +349,5 @@ async function main() {
 
 main().catch((err) => {
   console.error(err);
-  setStatus(statusEl, 'Error');
-  showError(resultsEl, err.message);
+  showMapError(err.message || 'The app failed to start.', 0);
 });

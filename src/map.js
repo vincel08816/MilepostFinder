@@ -95,7 +95,11 @@ export function addZoomToHomeControl(map, getHomeBounds) {
 
   control.onAdd = () => {
     const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control map-home-control');
-    const btn = L.DomUtil.create('button', 'map-home-control__btn', container);
+    const btn = L.DomUtil.create(
+      'button',
+      'btn btn-light btn-sm map-home-control__btn',
+      container,
+    );
     btn.type = 'button';
     btn.title = 'Zoom map to your location';
     btn.setAttribute('aria-label', 'Zoom map to your location');
@@ -122,9 +126,48 @@ export function addZoomToHomeControl(map, getHomeBounds) {
 
 export const HOME_VIEW_OPTIONS = { padding: [40, 40], maxZoom: 35 };
 
+const USER_VIEW_OPTIONS = { padding: [48, 48], maxZoom: 16 };
+const COARSE_LOCATION_ZOOM = 14;
+const MAX_ACCURACY_FIT_RADIUS_M = 2000;
+
 /** @param {L.Map} map @param {L.LatLngBounds} bounds */
 export function zoomMapToHome(map, bounds) {
   map.fitBounds(bounds, HOME_VIEW_OPTIONS);
+}
+
+/** @param {L.Map} map @param {{ lat: number, lng: number }} userLatLng @param {number | null | undefined} accuracyM */
+export function zoomToUserLocation(map, userLatLng, accuracyM) {
+  const latLng = L.latLng(userLatLng.lat, userLatLng.lng);
+  if (
+    accuracyM != null &&
+    accuracyM > 0 &&
+    accuracyM <= MAX_ACCURACY_FIT_RADIUS_M
+  ) {
+    map.fitBounds(latLng.toBounds(Math.max(accuracyM * 2, 80)), USER_VIEW_OPTIONS);
+  } else {
+    map.setView(latLng, COARSE_LOCATION_ZOOM);
+  }
+}
+
+/**
+ * User marker (and optional accuracy ring) while waiting for a precise GPS fix.
+ * @param {{ lat: number, lng: number }} userLatLng
+ * @param {number | null | undefined} accuracyM
+ */
+export function createCoarseUserLayer(userLatLng, accuracyM) {
+  const layers = L.layerGroup();
+  if (accuracyM != null && accuracyM > 0) {
+    L.circle(userLatLng, {
+      radius: Math.min(accuracyM, 500),
+      color: '#2563eb',
+      fillColor: '#3b82f6',
+      fillOpacity: 0.08,
+      weight: 1,
+      dashArray: '4 4',
+    }).addTo(layers);
+  }
+  L.marker(userLatLng, { icon: createUserIcon(), zIndexOffset: 600 }).addTo(layers);
+  return layers;
 }
 
 export function addMapLegend(map) {
