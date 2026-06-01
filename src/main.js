@@ -20,14 +20,11 @@ import {
 } from './map.js';
 import { applyMobileDocumentFlag } from './browser.js';
 import {
-  describeAccuracy,
-  formatSnackbarMessage,
   formatLocationCoords,
   hideMapSnackbar,
   renderResults,
   setLocation,
   showMapError,
-  showMapSnackbar,
 } from './ui.js';
 
 applyMobileDocumentFlag();
@@ -37,16 +34,6 @@ const resultsEl = document.getElementById('results');
 document.querySelector('[data-map-snackbar-dismiss]')?.addEventListener('click', () => {
   hideMapSnackbar();
 });
-
-/** @param {boolean} gpsPrecise @param {GeolocationCoordinates} coords */
-function showGpsSnackbar(gpsPrecise, coords) {
-  const variant = gpsPrecise ? 'success' : 'warning';
-  showMapSnackbar(
-    variant,
-    formatSnackbarMessage(variant, describeAccuracy(coords)),
-    gpsPrecise ? 4000 : 0,
-  );
-}
 
 const GEO_OPTIONS = {
   enableHighAccuracy: true,
@@ -156,11 +143,6 @@ async function main() {
   const hasTiles = await detectSelfHostedTiles();
   const { map, baseLayers } = createMap('map', { hasTiles });
 
-  showMapSnackbar(
-    'warning',
-    formatSnackbarMessage('warning', hasTiles ? 'Loading Thruway data.' : 'Loading map data.'),
-  );
-
   let mileposts;
   let roads;
   let ramps;
@@ -231,13 +213,6 @@ async function main() {
       return;
     }
     useRelaxedAccuracy = true;
-    showMapSnackbar(
-      'warning',
-      formatSnackbarMessage(
-        'warning',
-        `Accepting fixes up to ${RELAXED_ACCURACY_M} meters while waiting for a better signal.`,
-      ),
-    );
   }
 
   function clearLocationLayers() {
@@ -260,7 +235,7 @@ async function main() {
     const isFirstResult = !hasLocationResults;
 
     if (!isFirstResult && !movedEnoughMeters(coords, lastAppliedLngLat)) {
-      showGpsSnackbar(gpsPrecise, coords);
+      if (gpsPrecise) hideMapSnackbar();
       return;
     }
 
@@ -312,19 +287,13 @@ async function main() {
       milepostRoadSegment,
     });
 
-    showGpsSnackbar(gpsPrecise, coords);
+    if (gpsPrecise) hideMapSnackbar();
 
     if (gpsPrecise && !hasPreciseGps) {
       hasPreciseGps = true;
       stopAcquisitionPolling();
     }
   }
-
-  hideMapSnackbar();
-  showMapSnackbar(
-    'warning',
-    formatSnackbarMessage('warning', 'Waiting for your location.'),
-  );
 
   stopAcquisitionPolling = startAcquisitionPolling((coords) =>
     applyLocation(coords),

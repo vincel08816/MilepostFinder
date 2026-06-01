@@ -73,7 +73,7 @@ export function renderResults(el, data) {
     );
   }
 
-  el.innerHTML = `<dl class="row g-2 mb-0">${locationRow}${items}${directionRow}${roadSegmentRow}</dl>${notes.join('')}`;
+  el.innerHTML = `<dl class="row g-2 mb-4">${locationRow}${items}${directionRow}${roadSegmentRow}</dl>${notes.join('')}`;
 }
 
 /** @typedef {'success' | 'warning' | 'error'} MapSnackbarVariant */
