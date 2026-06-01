@@ -1,0 +1,394 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #1a1a1a;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #ddd;
+  background: #f8f8f8;
+}
+
+.app-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.map {
+  flex: 1;
+  min-height: 280px;
+}
+
+/* Map chrome */
+.leaflet-container {
+  background: #c5d4e3;
+  font-family: inherit;
+}
+
+.leaflet-control-layers {
+  font-size: 0.8rem;
+}
+
+.leaflet-control-layers-list label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.layer-control-swatch {
+  flex-shrink: 0;
+}
+
+.swatch--streets {
+  background: linear-gradient(135deg, #aad3df 50%, #f2efe9 50%);
+}
+
+.swatch--tiles {
+  background: linear-gradient(135deg, #c5d4e3 50%, #e8eef3 50%);
+}
+
+.swatch--rest {
+  background: #0284c7;
+  border-radius: 50%;
+}
+
+.swatch--parking {
+  background: #4b5563;
+  border-radius: 50%;
+}
+
+.map-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.map-facility {
+  background: transparent;
+  border: none;
+  text-align: center;
+}
+
+.map-facility span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.map-facility--ix span {
+  background: #7c3aed;
+  color: #fff;
+  font-size: 14px;
+}
+
+.map-facility--service span {
+  background: #059669;
+  color: #fff;
+}
+
+.map-facility--rest span {
+  background: #0284c7;
+  color: #fff;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.map-facility--parking span {
+  background: #4b5563;
+  color: #fff;
+  font-size: 10px;
+}
+
+.map-popup .muted {
+  color: #64748b;
+  font-size: 0.9em;
+}
+
+.map-legend {
+  padding: 0.5rem 0.65rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.map-legend__title {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.map-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.swatch--user {
+  background: #2563eb;
+  border-radius: 50%;
+}
+
+.swatch--nearest {
+  background: #dc2626;
+  border-radius: 50%;
+}
+
+.swatch--second {
+  background: #f97316;
+  border-radius: 50%;
+}
+
+.swatch--road {
+  background: #1e3a5f;
+}
+
+.swatch--dir {
+  background: #16a34a;
+}
+
+.swatch--ramp {
+  background: #c2410c;
+}
+
+.swatch--ix {
+  background: #7c3aed;
+  border-radius: 50%;
+}
+
+.swatch--service {
+  background: #059669;
+  border-radius: 50%;
+}
+
+.map-pin {
+  background: transparent;
+  border: none;
+}
+
+.map-pin__dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  margin: 4px auto 0;
+}
+
+.map-pin__ring {
+  position: absolute;
+  inset: 2px;
+  border: 2px solid #2563eb;
+  border-radius: 50%;
+  opacity: 0.45;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+}
+
+.map-pin--user .map-pin__dot {
+  width: 14px;
+  height: 14px;
+  background: #2563eb;
+  margin-top: 5px;
+}
+
+.map-pin--nearest .map-pin__dot {
+  background: #dc2626;
+  width: 14px;
+  height: 14px;
+}
+
+.map-pin--second .map-pin__dot {
+  background: #f97316;
+}
+
+.map-pin--milepost .map-pin__dot {
+  background: #94a3b8;
+  width: 8px;
+  height: 8px;
+  border-width: 1px;
+}
+
+.map-pin--snap .map-pin__dot {
+  background: #ea580c;
+  width: 10px;
+  height: 10px;
+}
+
+.map-home-control {
+  clear: both;
+}
+
+.map-home-control__btn {
+  display: block;
+  width: auto;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 0.65rem;
+  border: none;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 30px;
+  white-space: nowrap;
+}
+
+.map-home-control__btn:hover:not(:disabled) {
+  background: #f4f4f4;
+}
+
+.map-home-control__btn:disabled {
+  color: #bbb;
+  cursor: default;
+}
+
+.map-home-control__btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.leaflet-bar.leaflet-control.map-home-control {
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.results {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid #ddd;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+.results dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+}
+
+.results dt {
+  font-weight: 600;
+}
+
+.results dd {
+  margin: 0;
+}
+
+.results .warning {
+  color: #9a3412;
+  margin-top: 0.5rem;
+}
+
+.results .muted {
+  color: #666;
+  font-weight: normal;
+}
+
+.app-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #ddd;
+  background: #fff;
+}
+
+.help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a1a;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.help-btn:hover {
+  background: #f8fafc;
+}
+
+.help-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  main {
+    flex-direction: row;
+  }
+
+  .map {
+    flex: 2;
+  }
+
+  .results {
+    flex: 1;
+    max-width: 320px;
+    border-top: none;
+    border-left: 1px solid #ddd;
+    overflow-y: auto;
+  }
+}
